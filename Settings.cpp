@@ -156,7 +156,7 @@ void SoapyMiri::setGain(const int direction, const size_t channel, const std::st
     if (name == "Automatic") {
         mirisdr_set_tuner_gain(dev, (int) value);
     } else if (name == "LNA") {
-        mirisdr_set_lna_gain(dev, (int) value);
+        mirisdr_set_lna_gain(dev, (int) (value >= 1.0 ? 1 : 0));
     } else if (name == "Baseband") {
         mirisdr_set_baseband_gain(dev, (int) value);
     } else if (name == "Mixer") {
@@ -198,13 +198,13 @@ SoapySDR::Range SoapyMiri::getGainRange(const int direction, const size_t channe
     if (name == "Automatic") {
         return {0, static_cast<double>(highest), 1};
     } else if (name == "LNA") {
-        return {0, 1, 1}; // 24 dB
+        return {0, 24, 24}; // 24 dB
     } else if (name == "Baseband") {
         return {0, 59, 1};
     } else if (name == "Mixer") {
         return {0, 19, 19};
     } else if (name == "Mixbuffer") {
-        return {0, 24, 6};
+        return {0, 18, 6}; // 0/6/12/18 dB in AM1 mode, 0/24 dB in AM2 mode (if > 0)
     }
 
     SoapySDR_logf(SOAPY_SDR_WARNING, "Unknown range '%s'", name.c_str());
