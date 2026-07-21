@@ -48,6 +48,21 @@ SoapySDR::ArgInfoList SoapyMiri::getStreamArgsInfo(const int direction, const si
 
     streamArgs.push_back(asyncbuffsArg);
 
+    SoapySDR::ArgInfo transferArg;
+    transferArg.key = "transfer";
+    transferArg.value = "ISOC";
+    transferArg.name = "USB transfer mode";
+    transferArg.description = "Isochronous is more stable, bulk is faster";
+    transferArg.type = SoapySDR::ArgInfo::STRING;
+    transferArg.options.push_back("");
+    transferArg.options.push_back("ISOC");
+    transferArg.options.push_back("BULK");
+    transferArg.optionNames.push_back("");
+    transferArg.optionNames.push_back("ISOC");
+    transferArg.optionNames.push_back("BULK");
+
+    streamArgs.push_back(transferArg);
+
     return streamArgs;
 }
 
@@ -146,6 +161,17 @@ SoapySDR::Stream *SoapyMiri::setupStream(
     }
     SoapySDR_logf(SOAPY_SDR_DEBUG, "SoapyMiri Using %d buffers", optNumBuffers);
 
+    transferMode = "";
+    if (args.count("transfer") != 0) {
+        transferMode = args.at("transfer").c_str();
+        int res = mirisdr_set_transfer(dev, transferMode);
+        if (res != 0) {
+            SoapySDR_logf(SOAPY_SDR_ERROR, "SoapyMiri failed to set transfer mode: %s", transferMode);
+        } else {
+            SoapySDR_logf(SOAPY_SDR_DEBUG, "SoapyMiri Using %s transfer mode", transferMode);
+        }
+    }
+
     // clear async fifo counts
     _buf_tail = 0;
     _buf_count = 0;
@@ -181,6 +207,13 @@ int SoapyMiri::activateStream(
 
     resetBuffer = true;
     remainingElems = 0;
+
+    if (transferMode[0] != '\0') { // not empty
+        int res = mirisdr_set_transfer(dev, transferMode);
+        if (res != 0) {
+            SoapySDR_logf(SOAPY_SDR_ERROR, "MiriSDR failed to set transfer mode: %s", transferMode);
+        }
+    }
 
     if (!_rx_async_thread.joinable()) {
         mirisdr_reset_buffer(dev);

@@ -206,6 +206,7 @@ private:
         { "SDRplay", MIRISDR_HW_SDRPLAY },
     };
     mirisdr_hw_flavour_t hwFlavour = MIRISDR_HW_DEFAULT;
+    const char* transferMode = "";
 
 public:
     struct Buffer {

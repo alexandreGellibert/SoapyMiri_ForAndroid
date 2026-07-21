@@ -312,6 +312,8 @@ std::vector<double> SoapyMiri::listSampleRates(const int direction, const size_t
     results.push_back(9e6);
     results.push_back(10e6);
     results.push_back(12e6); // 12 Msps seems to be the limit for my MSI.SDR blue clone
+    results.push_back(13e6);
+    results.push_back(14e6); // limit under the bulk mode
 
     return results;
 }
@@ -409,6 +411,20 @@ SoapySDR::ArgInfoList SoapyMiri::getSettingInfo(void) const {
     }
     setArgs.push_back(flavourArg);
 
+    SoapySDR::ArgInfo formatArg;
+    formatArg.key = "format";
+    formatArg.value = "AUTO";
+    formatArg.name = "Sample format";
+    formatArg.description = "Format of the samples coming from MSI.2500";
+    formatArg.type = SoapySDR::ArgInfo::STRING;
+    formatArg.options.push_back("AUTO");
+    formatArg.options.push_back("252_S16");
+    formatArg.options.push_back("336_S16");
+    formatArg.options.push_back("384_S16");
+    formatArg.options.push_back("504_S16");
+    formatArg.options.push_back("504_S8");
+    setArgs.push_back(formatArg);
+
     return setArgs;
 }
 
@@ -434,6 +450,8 @@ void SoapyMiri::writeSetting(const std::string &key, const std::string &value) {
         } else {
             SoapySDR_logf(SOAPY_SDR_ERROR, "MiriSDR invalid HW flavour: %s", value.c_str());
         }
+    } else if (key == "format") {
+        mirisdr_set_sample_format(dev, value.c_str());
     }
 
 }
@@ -456,6 +474,12 @@ std::string SoapyMiri::readSetting(const std::string &key) const {
         // assert: flavour set to something impossible
         SoapySDR_logf(SOAPY_SDR_ERROR, "MiriSDR HW flavour set to unknown value: %d", hwFlavour);
         return "";
+    } else if (key == "format") {
+        const char* val = mirisdr_get_sample_format(dev);
+        return std::string(val);
+    } else if (key == "transfer") {
+        const char* val = mirisdr_get_transfer(dev);
+        return std::string(val);
     }
 
     SoapySDR_logf(SOAPY_SDR_WARNING, "Unknown setting '%s'", key.c_str());
