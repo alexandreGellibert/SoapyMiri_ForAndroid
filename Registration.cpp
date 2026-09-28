@@ -41,4 +41,7 @@ static SoapySDR::Device *makeMiriSDR(const SoapySDR::Kwargs &args) {
     return new SoapyMiri(args);
 }
 
-static SoapySDR::Registry registerMiri("soapyMiri", &SoapyMiri::findMiriSDR, &makeMiriSDR, SOAPY_SDR_ABI_VERSION);
+// Registered as "mirisdr" (not upstream's "soapyMiri") to match this
+// toolchain's lowercase, vendor-neutral driver-key convention (rtlsdr,
+// lime, airspy, airspyhf, hackrf).
+static SoapySDR::Registry registerMiri("mirisdr", &SoapyMiri::findMiriSDR, &makeMiriSDR, SOAPY_SDR_ABI_VERSION);

@@ -12,6 +12,22 @@ SoapyMiri::SoapyMiri(const SoapySDR::Kwargs &args) :
         SoapySDR_logf(SOAPY_SDR_INFO, "Opening %s...", args.at("label").c_str());
     }
 
+#if defined(__ANDROID__)
+    // Non-rooted Android apps can't enumerate/open raw USB nodes directly
+    // (no filesystem access to /dev/bus/usb); only Android's
+    // UsbManager.openDevice() can, via a permission-gated grant. The bridge
+    // passes that already-open fd through here instead of a device index.
+    if (args.count("fd") == 0)
+        throw std::runtime_error("Android LibMiriSDR requires 'fd' argument");
+
+    deviceIdx = 0;
+    int fd = std::stoi(args.at("fd"));
+    SoapySDR_logf(SOAPY_SDR_INFO, "Opening LibMiriSDR via Android fd=%d", fd);
+
+    if (mirisdr_open_fd(&dev, fd) != 0) {
+        throw std::runtime_error("Unable to open LibMiriSDR device.");
+    }
+#else
     if (args.count("index") == 0) {
         throw std::runtime_error("No SDRplay devices supported by LibMiriSDR found!");
     }
@@ -24,6 +40,7 @@ SoapyMiri::SoapyMiri(const SoapySDR::Kwargs &args) :
     if (mirisdr_open(&dev, deviceIdx) != 0) {
         throw std::runtime_error("Unable to open LibMiriSDR device.");
     }
+#endif
 }
 
 SoapyMiri::~SoapyMiri(void) {
